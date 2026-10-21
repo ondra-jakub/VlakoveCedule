@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VlakoveCedule.ViewModels"
+             x:Class="VlakoveCedule.Views.DeparturesBoardView"
+             x:DataType="vm:BoardPageVm"
+             Background="{StaticResource SzdcRowGray}">
+
+    <DockPanel>
+        <!-- Hlavička: název směru / stanice / hodiny -->
+        <Border DockPanel.Dock="Top" Padding="30,20,30,10">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <TextBlock Grid.Column="0" Text="Odjezdy" Classes="h2" FontWeight="Bold" Foreground="{StaticResource SzdcNavy}" VerticalAlignment="Bottom" />
+                <Button Grid.Column="1" Classes="station-name-btn" HorizontalAlignment="Center" Command="{Binding OpenStationInfoCommand}">
+                    <TextBlock Text="{Binding StationName}" Classes="h2" FontWeight="Bold" Foreground="{StaticResource SzdcNavy}" TextWrapping="Wrap" TextAlignment="Center" />
+                </Button>
+                <TextBlock Grid.Column="2" Text="{Binding $parent[Window].((vm:AppViewModel)DataContext).ClockText}" Classes="h2" Foreground="{StaticResource SzdcNavy}" VerticalAlignment="Bottom" />
+            </Grid>
+        </Border>
+
+        <!-- Modrá hlavička tabulky + řádky -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="30,0,30,20">
+                <Border Background="{StaticResource SzdcBlue}">
+                    <Grid ColumnDefinitions="110,85,120,60,170,*,100">
+                        <TextBlock Grid.Column="0" Text="Pravidelný" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="1" Text="Aktuální" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="2" Text="Vlak" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="3" Text="Linka" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="4" Text="Cíl" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="5" Text="Přes" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                        <TextBlock Grid.Column="6" Text="Nástupiště" Foreground="White" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                    </Grid>
+                </Border>
+                <ItemsControl ItemsSource="{Binding Departures}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BoardRowVm">
+                            <Border Background="{Binding RowBackground}">
+                                <Panel>
+                                <Grid IsVisible="{Binding IsRegular}" ColumnDefinitions="110,85,120,60,170,*,100">
+                                    <TextBlock Grid.Column="0" Text="{Binding Scheduled}" Foreground="{Binding ScheduledBrush}" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Actual}" Foreground="{Binding ActualBrush}" FontWeight="Bold" FontSize="13" Margin="10,4" IsVisible="{Binding HasActual}" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" Margin="10,4">
+                                        <TextBlock Text="{Binding Train}" Foreground="{Binding TrainBrush}" FontWeight="Bold" FontSize="13" />
+                                        <TextBlock Text="{Binding CompanyText}" Foreground="{StaticResource SzdcGray}" FontSize="13" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="3" Text="{Binding Line}" Foreground="{Binding LineBrush}" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Destination}" Foreground="{StaticResource SzdcNavy}" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Via}" Foreground="{StaticResource SzdcNavy}" FontSize="11" Margin="10,4" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="6" Text="{Binding Platform}" Foreground="{Binding PlatformBrush}" FontWeight="Bold" FontSize="13" Margin="10,4" />
+                                </Grid>
+                                <TextBlock IsVisible="{Binding IsNote}" Text="{Binding Note}"
+                                           Foreground="{StaticResource SzdcNavy}" FontSize="13" Margin="10,4" TextWrapping="Wrap" />
+                                </Panel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="Nejsou k dispozici žádné vlaky ke zobrazení." FontSize="11" Foreground="{StaticResource SzdcNavy}"
+                           Margin="10,8,0,0" IsVisible="{Binding NoData}" />
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

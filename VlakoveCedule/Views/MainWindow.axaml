@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:VlakoveCedule.ViewModels"
+        xmlns:views="using:VlakoveCedule.Views"
+        x:Class="VlakoveCedule.Views.MainWindow"
+        x:DataType="vm:AppViewModel"
+        Title="Vlakové cedule – Infotabule (Správa železnic)"
+        Width="1180" Height="760"
+        MinWidth="900" MinHeight="480"
+        Background="White"
+        FontFamily="Verdana">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Záložky -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="4">
+            <Button x:Name="TabButton0" Classes="tab" Click="TabClick" Tag="0">
+                <TextBlock Classes="tab-text">Výběr stanic</TextBlock>
+            </Button>
+            <Button x:Name="TabButton1" Classes="tab" Click="TabClick" Tag="1">
+                <TextBlock Classes="tab-text">Odjezdy</TextBlock>
+            </Button>
+            <Button x:Name="TabButton2" Classes="tab" Click="TabClick" Tag="2">
+                <TextBlock Classes="tab-text">Příjezdy</TextBlock>
+            </Button>
+        </StackPanel>
+
+        <!-- Obsah -->
+        <Panel Grid.Row="1">
+            <views:StationSelectView x:Name="StationSelect"
+                                     IsVisible="False"
+                                     DataContext="{Binding Picker}" />
+            <views:DeparturesBoardView x:Name="DeparturesBoard"
+                                       IsVisible="False"
+                                       DataContext="{Binding Board}" />
+            <views:ArrivalsBoardView x:Name="ArrivalsBoard"
+                                     IsVisible="False"
+                                     DataContext="{Binding Board}" />
+        </Panel>
+
+        <!-- Stav -->
+        <Border Grid.Row="2" Background="{StaticResource SzdcNavy}" Padding="10,4">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding Status}" Foreground="{StaticResource SzdcLightBlue}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding BusyReason}" Foreground="{StaticResource SzdcOrange}" FontSize="11" Margin="8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Board.RefreshHint}" Foreground="{StaticResource SzdcLightBlue}" FontSize="11" Margin="8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding Board.LastUpdated}" Foreground="{StaticResource SzdcLightBlue}" FontSize="11" Margin="8,0" VerticalAlignment="Center" />
+                <Button Grid.Column="4" Content="Znovu načíst"
+                        Command="{Binding RetryCommand}"
+                        Background="{StaticResource SzdcBlue}" Foreground="Black" FontSize="11" Height="20" Padding="8,0" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

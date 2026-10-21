@@ -1,0 +1,23 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VlakoveCedule.App"
+             RequestedThemeVariant="Light">
+    <Application.Resources>
+        <!-- Barvy převzaté z CSS webu Infotabule (szdc_boards_web/css/main.css) -->
+    <SolidColorBrush x:Key="SzdcNavy" Color="#002b59" />
+    <SolidColorBrush x:Key="SzdcBlue" Color="#00a1e0" />
+    <SolidColorBrush x:Key="SzdcRowGray" Color="#f0f0f0" />
+    <SolidColorBrush x:Key="SzdcRed" Color="#e60000" />
+    <SolidColorBrush x:Key="SzdcGreen" Color="#10a764" />
+    <SolidColorBrush x:Key="SzdcGray" Color="#828282" />
+    <SolidColorBrush x:Key="SzdcLightBlue" Color="#e6f6fc" />
+    <SolidColorBrush x:Key="SzdcOrange" Color="#ff5200" />
+    <SolidColorBrush x:Key="SzdcWhite" Color="#ffffff" />
+    <SolidColorBrush x:Key="SzdcBlack" Color="#000000" />
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://VlakoveCedule/Styles/SzdcStyles.axaml" />
+    </Application.Styles>
+</Application>

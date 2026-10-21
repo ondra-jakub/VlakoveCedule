@@ -1,0 +1,7 @@
+﻿services:
+  vlakovecedule:
+    image: vlakovecedule
+    build:
+      context: .
+      dockerfile: VlakoveCedule/Dockerfile
+

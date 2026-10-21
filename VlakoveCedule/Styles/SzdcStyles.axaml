@@ -1,0 +1,105 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Barvy jsou v Application.Resources (App.axaml) -->
+
+    <!-- Textové styly -->
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontFamily" Value="Verdana" />
+        <Setter Property="FontSize" Value="24" />
+    </Style>
+    <Style Selector="TextBlock.tab-text">
+        <Setter Property="FontFamily" Value="Verdana" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Záložky vzhledu webu: 34 px, horní lem 8 px -->
+    <Style Selector="Button.tab">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcNavy}" />
+        <Setter Property="BorderThickness" Value="0,8,0,0" />
+        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="Button.tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcBlue}" />
+    </Style>
+    <Style Selector="Button.tab.selected">
+        <Setter Property="BorderBrush" Value="{StaticResource SzdcBlue}" />
+        <Setter Property="Background" Value="{StaticResource SzdcRowGray}" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcBlue}" />
+    </Style>
+    <Style Selector="Button.tab.selected.navybg">
+        <Setter Property="Background" Value="{StaticResource SzdcNavy}" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcBlue}" />
+    </Style>
+    <Style Selector="Button.tab:selected.navybg">
+        <Setter Property="Background" Value="{StaticResource SzdcNavy}" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcBlue}" />
+    </Style>
+
+    <!-- Tlačítka abecedy -->
+    <Style Selector="Button.letter-btn">
+        <Setter Property="Background" Value="{StaticResource SzdcBlue}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontFamily" Value="Verdana" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="MinWidth" Value="27" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,4,4" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.letter-btn /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="TextBlock.FontWeight" Value="Normal" />
+    </Style>
+    <Style Selector="Button.letter-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource SzdcOrange}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Hledat button -->
+    <Style Selector="Button.search-btn">
+        <Setter Property="Background" Value="{StaticResource SzdcOrange}" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="132" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Stanice jako odkaz -->
+    <Style Selector="Button.station-link">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource SzdcLightBlue}" />
+        <Setter Property="FontFamily" Value="Verdana" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="Padding" Value="4,2" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button.station-link /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="Button.station-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{StaticResource SzdcBlue}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="TextBlock.TextDecorations" Value="Underline" />
+    </Style>
+
+    <!-- Název stanice v hlavičce tabule -->
+    <Style Selector="Button.station-name-btn">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button.station-name-btn:hover">
+        <Setter Property="Opacity" Value="0.85" />
+    </Style>
+</Styles>

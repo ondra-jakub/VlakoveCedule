@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VlakoveCedule.ViewModels"
+             xmlns:m="using:VlakoveCedule.Models"
+             x:Class="VlakoveCedule.Views.StationSelectView"
+             x:DataType="vm:StationPickerVm"
+             Background="{StaticResource SzdcNavy}">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,20,24,24" Spacing="10">
+
+            <!-- Vyhledávač -->
+            <Grid ColumnDefinitions="Auto,320,Auto,*,Auto" ColumnSpacing="8">
+                <TextBlock Grid.Column="0" Text="Název stanice" Foreground="White" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Height="32" />
+                <TextBox Grid.Column="1" Text="{Binding SearchText}" PlaceholderText="Zadejte stanici" Height="32" VerticalContentAlignment="Center" />
+                <Button Grid.Column="2" Classes="search-btn" Command="{Binding SearchCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Foreground="White" FontSize="11" FontWeight="Bold" VerticalAlignment="Center">Hledat</TextBlock>
+                        <TextBlock Foreground="White" FontSize="11" VerticalAlignment="Center">→</TextBlock>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <TextBlock Text="Nebo vyberte stanici ze seznamu:" Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,10,0,0" />
+
+            <!-- Abeceda -->
+            <ItemsControl ItemsSource="{Binding LetterItems}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:LetterItem">
+                        <Button Classes="letter-btn"
+                                Command="{Binding $parent[ItemsControl].((vm:StationPickerVm)DataContext).LoadLetterCommand}"
+                                CommandParameter="{Binding Letter}">
+                            <TextBlock Text="{Binding Letter}" FontSize="16" Foreground="White" />
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Height="1" Background="White" Opacity="0.6" />
+
+            <TextBlock Text="{Binding Heading}" Foreground="White" FontSize="13" FontWeight="Bold" />
+            <TextBlock Text="{Binding LoadProgress}" Foreground="{StaticResource SzdcLightBlue}" FontSize="11" IsVisible="{Binding LoadProgressVisible}" />
+
+            <!-- Výsledky hledání -->
+            <ItemsControl ItemsSource="{Binding SearchResults}" IsVisible="{Binding SearchActive}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:Station">
+                        <Button Classes="station-link" HorizontalContentAlignment="Stretch"
+                                Command="{Binding $parent[ItemsControl].((vm:StationPickerVm)DataContext).PickSearchStationCommand}"
+                                CommandParameter="{Binding}">
+                            <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Stanice pod zvoleným písmenem -->
+            <ItemsControl ItemsSource="{Binding LetterStations}" IsVisible="{Binding LetterActive}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:Station">
+                        <Button Classes="station-link" HorizontalContentAlignment="Stretch"
+                                Command="{Binding $parent[ItemsControl].((vm:StationPickerVm)DataContext).PickLetterStationCommand}"
+                                CommandParameter="{Binding}">
+                            <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
