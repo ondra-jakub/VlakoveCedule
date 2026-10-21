@@ -20,6 +20,8 @@ public partial class App : Application
             var vm = new AppViewModel();
             desktop.MainWindow = new MainWindow { DataContext = vm };
             vm.Start();
+            if (Environment.GetCommandLineArgs().Contains("--autotest"))
+                AppViewModel.StartAutoTest(vm);   // TEMP-DIAG: automatická reprodukce flow bez klikání
         }
 
         base.OnFrameworkInitializationCompleted();

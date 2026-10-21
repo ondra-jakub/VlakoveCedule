@@ -392,8 +392,15 @@ public static partial class SzdcParser
         return defaultColor;
     }
 
-    public sealed class SzdcException : Exception
+    public class SzdcException : Exception
     {
         public SzdcException(string message) : base(message) { }
+    }
+
+    /// <summary>Serverové view se změnilo (uživatel procházel stanice) – NENÍ to vypršení session,
+    /// tabuli stačí znovu otevřít, bez inicializace celého klienta.</summary>
+    public sealed class StaleViewException : SzdcException
+    {
+        public StaleViewException(string message) : base(message) { }
     }
 }

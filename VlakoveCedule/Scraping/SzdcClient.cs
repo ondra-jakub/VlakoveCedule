@@ -32,22 +32,10 @@ public sealed class SzdcClient : IDisposable
 
     public event Action<string>? Log;
 
-    private static readonly string? LogFile = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "VlakoveCedule", "flow.log");
-
     private void Emit(string message)
     {
         Log?.Invoke(message);
-        try
-        {
-            if (LogFile != null)
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(LogFile)!);
-                File.AppendAllText(LogFile, $"{DateTime.Now:HH:mm:ss.fff} {message}\n");
-            }
-        }
-        catch { }
+        DiagLog.Append("flow.log", message);
     }
 
     public SzdcClient(string jarPath)
@@ -204,7 +192,7 @@ public sealed class SzdcClient : IDisposable
             var board = CurrentBoard ?? throw new InvalidOperationException("Není otevřena žádná stanice.");
             var p = _page ?? throw new InvalidOperationException("Klient není inicializován.");
             if (!IsViewBoard)
-                throw new SzdcParser.SzdcException("View se mezi tím změnilo (výběr stanic) – nutné znovu otevřít stanici.");
+                throw new SzdcParser.StaleViewException("View se mezi tím změnilo (výběr stanic) – nutné znovu otevřít stanici.");
             var depId = board.DeparturesListId ?? FormId + ":tabview:listDepartures";
             var arrId = board.ArrivalsListId ?? FormId + ":tabview:listArrivals";
 
