@@ -8,7 +8,7 @@ internal static class SelfTest
 {
     public static async Task RunAsync(string[] args)
     {
-        using var client = new SzdcClient(Path.Combine(Path.GetTempPath(), "vlakovecedule_probe_cookies.txt"));
+        using var client = new SzdcClient();
         client.Log += Console.WriteLine;
         var station = args.Length > 1 ? args[1] : "Praha hlavní nádraží";
         Console.WriteLine($"== Probe: {station} ==");

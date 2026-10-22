@@ -17,7 +17,7 @@ public sealed class SzdcClient : IDisposable
     private const string ActiveIdx = Prefix + ":tabsForm:tabview_activeIndex";
     private const string FilterInput = Prefix + ":tabsForm:tabview:filterInput_input";
 
-    private readonly CurlHttp _http;
+    private readonly SzdcHttp _http;
     private readonly SemaphoreSlim _flowGate = new(1, 1);
     private SzdcParser.PageInfo? _page;
 
@@ -38,9 +38,9 @@ public sealed class SzdcClient : IDisposable
         DiagLog.Append("flow.log", message);
     }
 
-    public SzdcClient(string jarPath)
+    public SzdcClient()
     {
-        _http = new CurlHttp(jarPath);
+        _http = new SzdcHttp();
     }
 
     /// <summary>Nacte uvodní stránku + detectScreen + startup init. Volat na zacatku a po vypršení session.</summary>

@@ -159,9 +159,8 @@ public partial class AppViewModel : ObservableObject
         BusyReason = "Připojuji se k Infotabuli…";
         try
         {
-            var jar = Path.Combine(GetAppData(), "cookies.txt");
             var state = LoadState();
-            _client = new SzdcClient(jar);
+            _client = new SzdcClient();
             _client.Log += s =>
             {
                 if (s.StartsWith("Písmeno ", StringComparison.Ordinal)) return;
