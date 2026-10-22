@@ -6,7 +6,7 @@ namespace VlakoveCedule.Base;
 public static class DiagLog
 {
     private static readonly object Lock = new();
-    private static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VlakoveCedule");
+    private static string Dir => AppPaths.BaseDir;
 
     public static void Append(string fileName, string line)
     {

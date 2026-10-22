@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VlakoveCedule.Maui.ViewModels"
+             x:Class="VlakoveCedule.Maui.Views.ArrivalsBoardView"
+             x:DataType="vm:BoardPageVm"
+             BackgroundColor="{StaticResource SzdcRowGray}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Hlavička: název směru / stanice / hodiny -->
+        <Border Grid.Row="0" Padding="30,20,30,10" StrokeThickness="0">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Label Text="Příjezdy" FontAttributes="Bold" TextColor="{StaticResource SzdcNavy}" FontSize="24" VerticalOptions="End" />
+                <Label Grid.Column="1" Text="{Binding StationName}" FontAttributes="Bold" TextColor="{StaticResource SzdcNavy}"
+                       FontSize="24" VerticalOptions="End" HorizontalOptions="Center" HorizontalTextAlignment="Center"
+                       LineBreakMode="WordWrap">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding OpenStationInfoCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="2" Text="{Binding ClockText}" TextColor="{StaticResource SzdcNavy}" FontSize="24" VerticalOptions="End" />
+            </Grid>
+        </Border>
+
+        <!-- Modrá hlavička tabulky + řádky: kompaktní a plná varianta přepínané IsVisible -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="0">
+
+                <!-- Kompaktní (zavřený skládací telefon, ~344 dp): Čas | Vlak+linka | Ze směru | Nástupiště -->
+                <StackLayout IsVisible="{Binding IsCompact}"
+                             Margin="12,0,12,12">
+                    <Border BackgroundColor="{StaticResource SzdcBlue}" StrokeThickness="0">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                            <Label Text="Čas" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="1" Text="Vlak" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="2" Text="Ze směru" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="3" Text="Nástupiště" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                        </Grid>
+                    </Border>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Arrivals}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BoardRowVm">
+                                <Border BackgroundColor="{Binding RowBackground}" StrokeThickness="0">
+                                    <Grid>
+                                        <Grid IsVisible="{Binding IsRegular}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <VerticalStackLayout VerticalOptions="Center">
+                                                <Label Text="{Binding Scheduled}" TextColor="{Binding ScheduledBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                                <Label Text="{Binding Actual}" TextColor="{Binding ActualBrush}" FontAttributes="Bold" FontSize="13" Margin="6,0" IsVisible="{Binding HasActual}" />
+                                            </VerticalStackLayout>
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center" Margin="6,4">
+                                                <Label Text="{Binding Train}" TextColor="{Binding TrainBrush}" FontAttributes="Bold" FontSize="13" />
+                                                <Label Text="{Binding Line}" TextColor="{Binding LineBrush}" FontAttributes="Bold" FontSize="13" />
+                                            </HorizontalStackLayout>
+                                            <Label Grid.Column="2" Text="{Binding Origin}" TextColor="{StaticResource SzdcNavy}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                            <Label Grid.Column="3" Text="{Binding Platform}" TextColor="{Binding PlatformBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" VerticalOptions="Center" />
+                                        </Grid>
+                                        <Label IsVisible="{Binding IsNote}" Text="{Binding Note}" TextColor="{StaticResource SzdcNavy}" FontSize="13" Margin="6,4" LineBreakMode="WordWrap" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </StackLayout>
+
+                <!-- Plná šířka (otevřený skládací telefon) – 1:1 jako desktop -->
+                <StackLayout IsVisible="{Binding IsWide}"
+                             Margin="30,0,30,20">
+                    <Border BackgroundColor="{StaticResource SzdcBlue}" StrokeThickness="0">
+                        <Grid ColumnDefinitions="1.7*,0.6*,1.1*,0.85*,1.6*,1*">
+                            <Label Grid.Column="0" Text="Ze směru" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="1" Text="Linka" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="2" Text="Pravidelný" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="3" Text="Aktuální" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="4" Text="Vlak" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                            <Label Grid.Column="5" Text="Nástupiště" TextColor="White" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                        </Grid>
+                    </Border>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Arrivals}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BoardRowVm">
+                                <Border BackgroundColor="{Binding RowBackground}" StrokeThickness="0">
+                                    <Grid>
+                                        <Grid IsVisible="{Binding IsRegular}" ColumnDefinitions="1.7*,0.6*,1.1*,0.85*,1.6*,1*">
+                                            <Label Text="{Binding Origin}" TextColor="{StaticResource SzdcNavy}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                            <Label Grid.Column="1" Text="{Binding Line}" TextColor="{Binding LineBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                            <Label Grid.Column="2" Text="{Binding Scheduled}" TextColor="{Binding ScheduledBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                            <Label Grid.Column="3" Text="{Binding Actual}" TextColor="{Binding ActualBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" IsVisible="{Binding HasActual}" />
+                                            <HorizontalStackLayout Grid.Column="4" Spacing="4" Margin="6,4">
+                                                <Label Text="{Binding Train}" TextColor="{Binding TrainBrush}" FontAttributes="Bold" FontSize="13" />
+                                                <Label Text="{Binding CompanyText}" TextColor="{StaticResource SzdcGray}" FontSize="13" />
+                                            </HorizontalStackLayout>
+                                            <Label Grid.Column="5" Text="{Binding Platform}" TextColor="{Binding PlatformBrush}" FontAttributes="Bold" FontSize="13" Margin="6,4" />
+                                        </Grid>
+                                        <Label IsVisible="{Binding IsNote}" Text="{Binding Note}" TextColor="{StaticResource SzdcNavy}" FontSize="13" Margin="6,4" LineBreakMode="WordWrap" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </StackLayout>
+
+                <Label Text="Nejsou k dispozici žádné vlaky ke zobrazení." FontSize="11" TextColor="{StaticResource SzdcNavy}"
+                       Margin="10,8,0,0" IsVisible="{Binding NoData}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentView>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VlakoveCedule.Maui.ViewModels"
+             xmlns:m="clr-namespace:VlakoveCedule.Contracts;assembly=VlakoveCedule.Contracts"
+             x:Class="VlakoveCedule.Maui.Views.StationSelectView"
+             x:DataType="vm:StationPickerVm"
+             BackgroundColor="{StaticResource SzdcNavy}">
+
+    <ScrollView VerticalOptions="Fill">
+        <VerticalStackLayout Margin="24,20,24,24" Spacing="10">
+
+            <!-- Vyhledávač -->
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Label Text="Název stanice" TextColor="White" FontSize="11" FontAttributes="Bold" VerticalOptions="Center" />
+                <Entry Grid.Column="1" Placeholder="Zadejte stanici" Text="{Binding SearchText}"
+                       HeightRequest="32" BackgroundColor="White" TextColor="Black" VerticalOptions="Center"
+                       Completed="OnSearchEnter" />
+                <Button Grid.Column="2" StyleClass="search-btn" Text="Hledat →" Clicked="OnSearchClicked" />
+            </Grid>
+
+            <Label Text="Nebo vyberte stanici ze seznamu:" TextColor="White" FontSize="11" FontAttributes="Bold" Margin="0,10,0,0" />
+
+            <!-- Abeceda -->
+            <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding LetterItems}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="m:LetterItem">
+                        <Button StyleClass="letter-btn" Text="{Binding Letter}"
+                                Clicked="OnLetterClicked" CommandParameter="{Binding Letter}" />
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+            <BoxView HeightRequest="1" Color="White" Opacity="0.6" />
+
+            <Label Text="{Binding Heading}" TextColor="White" FontSize="13" FontAttributes="Bold" />
+            <Label Text="{Binding LoadProgress}" TextColor="{StaticResource SzdcLightBlue}" FontSize="11" IsVisible="{Binding LoadProgressVisible}" />
+
+            <!-- Výsledky hledání -->
+            <FlexLayout Wrap="Wrap"
+                        BindableLayout.ItemsSource="{Binding SearchResults}"
+                        IsVisible="{Binding SearchActive}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="m:Station">
+                        <Button StyleClass="station-link" FlexLayout.Basis="33%"
+                                Text="{Binding Name}"
+                                Clicked="OnSearchStationClicked" CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+            <!-- Stanice pod zvoleným písmenem -->
+            <FlexLayout Wrap="Wrap"
+                        BindableLayout.ItemsSource="{Binding LetterStations}"
+                        IsVisible="{Binding LetterActive}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="m:Station">
+                        <Button StyleClass="station-link" FlexLayout.Basis="33%"
+                                Text="{Binding Name}"
+                                Clicked="OnLetterStationClicked" CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentView>

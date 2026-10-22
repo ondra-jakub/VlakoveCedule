@@ -1,9 +1,10 @@
 using System.IO;
 using System.Text.Json;
+using VlakoveCedule.Base;
 
 namespace VlakoveCedule.Core.Services;
 
-/// <summary>Perzistence stavu aplikace (naposledy otevřená stanice) – ApplicationData/VlakoveCedule/state.json.</summary>
+/// <summary>Perzistence stavu aplikace (naposledy otevřená stanice) – AppPaths.BaseDir/state.json.</summary>
 public sealed class AppStateStore
 {
     public sealed class AppState
@@ -13,9 +14,7 @@ public sealed class AppStateStore
 
     private static string GetAppData()
     {
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VlakoveCedule");
+        var dir = AppPaths.BaseDir;
         Directory.CreateDirectory(dir);
         return dir;
     }

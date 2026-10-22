@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:VlakoveCedule.Maui.ViewModels"
+             xmlns:views="clr-namespace:VlakoveCedule.Maui.Views"
+             x:Class="VlakoveCedule.Maui.MainPage"
+             x:DataType="vm:AppViewModel"
+             Title="Vlakové cedule – Infotabule (Správa železnic)"
+             BackgroundColor="White">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Záložky: horní lem 8 px (BoxView) obarvuje code-behind podle SelectedTab -->
+        <HorizontalStackLayout Grid.Row="0" Spacing="4">
+            <VerticalStackLayout Spacing="0">
+                <BoxView x:Name="TabStripe0" HeightRequest="8" Color="White" />
+                <Button x:Name="TabButton0" StyleClass="tab" Text="Výběr stanic"
+                        Clicked="TabClick" CommandParameter="0" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Spacing="0">
+                <BoxView x:Name="TabStripe1" HeightRequest="8" Color="White" />
+                <Button x:Name="TabButton1" StyleClass="tab" Text="Odjezdy"
+                        Clicked="TabClick" CommandParameter="1" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Spacing="0">
+                <BoxView x:Name="TabStripe2" HeightRequest="8" Color="White" />
+                <Button x:Name="TabButton2" StyleClass="tab" Text="Příjezdy"
+                        Clicked="TabClick" CommandParameter="2" />
+            </VerticalStackLayout>
+        </HorizontalStackLayout>
+
+        <!-- Obsah (BindingContext na pohledy nasazuje code-behind, viz WireViewModel) -->
+        <Grid Grid.Row="1">
+            <views:StationSelectView x:Name="StationSelect"
+                                     IsVisible="False" />
+            <views:DeparturesBoardView x:Name="DeparturesBoard"
+                                       IsVisible="False" />
+            <views:ArrivalsBoardView x:Name="ArrivalsBoard"
+                                     IsVisible="False" />
+        </Grid>
+
+        <!-- Stav -->
+        <Border Grid.Row="2" BackgroundColor="{StaticResource SzdcNavy}" Padding="10,4" StrokeThickness="0">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                <Label Grid.Column="0" Text="{Binding Status}" TextColor="{StaticResource SzdcLightBlue}" FontSize="11"
+                       VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                <Label Grid.Column="1" Text="{Binding BusyReason}" TextColor="{StaticResource SzdcOrange}" FontSize="11"
+                       Margin="8,0" VerticalOptions="Center" LineBreakMode="TailTruncation" MaxLines="1" />
+                <Label Grid.Column="2" Text="{Binding Board.RefreshHint}" TextColor="{StaticResource SzdcLightBlue}" FontSize="11"
+                       Margin="8,0" VerticalOptions="Center" />
+                <Label Grid.Column="3" Text="{Binding Board.LastUpdated}" TextColor="{StaticResource SzdcLightBlue}" FontSize="11"
+                       Margin="8,0" VerticalOptions="Center" />
+                <Button Grid.Column="4" Text="Znovu načíst"
+                        Command="{Binding RetryCommand}"
+                        BackgroundColor="{StaticResource SzdcBlue}" TextColor="Black" FontSize="11"
+                        HeightRequest="20" Padding="8,0" CornerRadius="0" BorderWidth="0" />
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>

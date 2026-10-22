@@ -6,4 +6,5 @@
   <Project Path="VlakoveCedule.Contracts/VlakoveCedule.Contracts.csproj" />
   <Project Path="VlakoveCedule.Core/VlakoveCedule.Core.csproj" />
   <Project Path="VlakoveCedule/VlakoveCedule.csproj" />
+  <Project Path="VlakoveCedule.Maui/VlakoveCedule.Maui.csproj" />
 </Solution>
