@@ -1,4 +1,4 @@
-namespace VlakoveCedule.Models;
+namespace VlakoveCedule.Contracts;
 
 /// <summary>Barva kategorie vlaku podle CSS webu Infotabule.</summary>
 public enum TrainColor

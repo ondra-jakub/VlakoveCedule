@@ -1,7 +1,7 @@
-namespace VlakoveCedule.Net;
+namespace VlakoveCedule.Base;
 
 /// <summary>Vložení SemaphoreSlim.WaitAsync jako rozšíření, aby šlo volání čitelně řetězit.</summary>
-internal static class SemaphoreSlimExtensions
+public static class SemaphoreSlimExtensions
 {
     public static async Task<T> RunAsync<T>(this SemaphoreSlim sem, Func<Task<T>> factory, CancellationToken ct)
     {

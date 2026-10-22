@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using VlakoveCedule.Models;
-using VlakoveCedule.Scraping;
+using VlakoveCedule.Contracts;
+using VlakoveCedule.Core.Services;
 
 namespace VlakoveCedule.ViewModels;
 
@@ -10,16 +10,11 @@ namespace VlakoveCedule.ViewModels;
 /// ClientId se nepoužívá (vždy „“), neboť je platné jen do další změny serverového view.</summary>
 public sealed record StationRequestedEventArgs(string StationName, string ClientId, string Bucket);
 
-/// <summary>ViewModel záložky „Výběr stanic“: vyhledávač + abeceda + seznam.</summary>
+/// <summary>ViewModel záložky „Výběr stanic“: vyhledávač + abeceda + seznam.
+/// Data (písmena, listing, prefetch, katalog) dodává <see cref="InfotabuleService"/> přes eventy.</summary>
 public partial class StationPickerVm : ObservableObject
 {
-    private readonly Func<IReadOnlyList<LetterItem>> _letters;
-    private readonly Func<string, CancellationToken, Task<LetterListing>> _loadLetter;
-    private readonly Func<CancellationToken, Task> _prefetchAll;
-
-    private readonly object _bucketsLock = new();
-    private Dictionary<string, string> _buckets = new(StringComparer.OrdinalIgnoreCase);
-    private CancellationTokenSource? _prefetchCts;
+    private readonly InfotabuleService _service;
 
     [ObservableProperty]
     private string _searchText = "";
@@ -54,92 +49,24 @@ public partial class StationPickerVm : ObservableObject
     /// <summary>Vybraná stanice – obsluhuje AppViewModel.</summary>
     public event Action<StationRequestedEventArgs>? StationRequested;
 
-    public StationPickerVm(
-        Func<IReadOnlyList<LetterItem>> letters,
-        Func<string, CancellationToken, Task<LetterListing>> loadLetter,
-        Func<CancellationToken, Task> prefetchAll)
+    public StationPickerVm(InfotabuleService service)
     {
-        _letters = letters;
-        _loadLetter = loadLetter;
-        _prefetchAll = prefetchAll;
-        RefreshLetterItems();
+        _service = service;
     }
 
-    public void RefreshLetterItems()
+    /// <summary>Písmena z události služby (volá se na UI vlákně).</summary>
+    public void SetLetterItems(IReadOnlyList<LetterItem> letters)
+        => LetterItems = new ObservableCollection<LetterItem>(letters);
+
+    /// <summary>Nový listing písmena z události služby (volá se na UI vlákně).</summary>
+    public void OnLetterListed(LetterListing listing) => ReloadLetterStations(listing, listing.Bucket);
+
+    /// <summary>Stav prefetch smyčky z události služby (volá se na UI vlákně).</summary>
+    public void ApplyPrefetchState(PrefetchState state)
     {
-        Ui(() => LetterItems = new ObservableCollection<LetterItem>(_letters()));
-    }
-
-    private static void Ui(Action action)
-    {
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) action();
-        else Avalonia.Threading.Dispatcher.UIThread.Post(action);
-    }
-
-    /// <summary>Načtení kompletního seznamu stanic na pozadí (pro vyhledávač).</summary>
-    public void StartPrefetch()
-    {
-        _prefetchCts?.Cancel();
-        _prefetchCts = new CancellationTokenSource();
-        var cts = _prefetchCts;
-        _ = Task.Run(() => PrefetchLoopAsync(cts!.Token));
-    }
-
-    /// <summary>Pozastavit prefetch (během výběru stanice / zobrazování tabule) – jinak měnil serverové view a rozbíjal klik na stanici.</summary>
-    public volatile bool PrefetchPaused;
-
-    private async Task PrefetchLoopAsync(CancellationToken ct)
-    {
-        Ui(() => IsPrefetching = true);
-        try
-        {
-            var letters = _letters().Select(l => l.Letter).ToList();
-            for (var i = 0; i < letters.Count; i++)
-            {
-                ct.ThrowIfCancellationRequested();
-                while (PrefetchPaused)
-                {
-                    await Task.Delay(250, ct).ConfigureAwait(false);
-                    ct.ThrowIfCancellationRequested();
-                }
-                Ui(() => LoadProgress = $"Načítám kompletní seznam stanic… ({i + 1}/{letters.Count})");
-                try
-                {
-                    var lst = await _loadLetter(letters[i], ct).ConfigureAwait(false);
-                    lock (_bucketsLock)
-                        foreach (var s in lst.Stations)
-                            _buckets[s.Name] = lst.Bucket;
-                    if (ActiveLetter == letters[i])
-                        Ui(() => ReloadLetterStations(lst, letters[i]));
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception)
-                {
-                    // jednotlivé písmeno nevadí
-                }
-                await Task.Delay(200, ct).ConfigureAwait(false);
-            }
-            var total = 0;
-            lock (_bucketsLock) total = _buckets.Count;
-            Ui(() => LoadProgress = $"Seznam stanic je kompletní ({total} stanic).");
-        }
-        catch (OperationCanceledException)
-        {
-            SetProgressQuiet("");
-        }
-        finally
-        {
-            Ui(() => IsPrefetching = false);
-        }
-        Ui(RefreshSearch);
-    }
-
-    private void SetProgressQuiet(string text) => Ui(() => LoadProgress = text);
-
-    public string? BucketFor(string name)
-    {
-        lock (_bucketsLock)
-            return _buckets.TryGetValue(name, out var b) ? b : null;
+        IsPrefetching = state.IsPrefetching;
+        LoadProgress = state.ProgressText;
+        if (!state.IsPrefetching) RefreshSearch();
     }
 
     [RelayCommand]
@@ -148,8 +75,7 @@ public partial class StationPickerVm : ObservableObject
         ActiveLetter = letter;
         try
         {
-            var lst = await _loadLetter(letter, CancellationToken.None).ConfigureAwait(false);
-            await OnUiAsync(() => ReloadLetterStations(lst, letter)).ConfigureAwait(false);
+            await _service.ListLetterAsync(letter, CancellationToken.None).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -157,29 +83,23 @@ public partial class StationPickerVm : ObservableObject
         }
     }
 
-    private static Task OnUiAsync(Action action)
-    {
-        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) { action(); return Task.CompletedTask; }
-        return Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(action).GetTask();
-    }
-
-    private void ReloadLetterStations(LetterListing lst, string letter)
+    private void ReloadLetterStations(LetterListing listing, string letter)
     {
         LetterStations.Clear();
-        foreach (var s in lst.Stations)
+        foreach (var s in listing.Stations)
             LetterStations.Add(s);
-        Heading = $"Stanice na písmeno „{letter}“ ({lst.Stations.Count})";
+        Heading = $"Stanice na písmeno „{letter}“ ({listing.Stations.Count})";
     }
 
     [RelayCommand]
     private Task Search() => SearchResults.Count > 0
-        ? RequestAsync(new StationRequestedEventArgs(SearchResults[0].Name, "", BucketFor(SearchResults[0].Name) ?? SzdcClient.GuessBucket(SearchResults[0].Name)))
+        ? RequestAsync(new StationRequestedEventArgs(SearchResults[0].Name, "", _service.BucketFor(SearchResults[0].Name)))
         : Task.CompletedTask;
 
     /// <summary>Enter ve vyhledávacím poli → výběr prvního vyhovujícího.</summary>
     [RelayCommand]
     private Task SearchEnter() => SearchResults.Count > 0
-        ? RequestAsync(new StationRequestedEventArgs(SearchResults[0].Name, "", BucketFor(SearchResults[0].Name) ?? SzdcClient.GuessBucket(SearchResults[0].Name)))
+        ? RequestAsync(new StationRequestedEventArgs(SearchResults[0].Name, "", _service.BucketFor(SearchResults[0].Name)))
         : Task.CompletedTask;
 
     [RelayCommand]
@@ -195,21 +115,19 @@ public partial class StationPickerVm : ObservableObject
     /// jako úspěch – proto fungoval jen první klik na stanici pod písmenem a další vyžadovaly
     /// nový klik na písmeno (čerstvý list).
     /// </summary>
-    private static StationRequestedEventArgs ToArgs(Station station) =>
-        new(station.Name, "", !string.IsNullOrEmpty(station.Bucket)
-            ? station.Bucket
-            : SzdcClient.GuessBucket(station.Name));
+    private StationRequestedEventArgs ToArgs(Station station) =>
+        new(station.Name, "", !string.IsNullOrEmpty(station.Bucket) ? station.Bucket : _service.BucketFor(station.Name));
 
     private async Task RequestAsync(StationRequestedEventArgs args)
     {
-        await OnUiAsync(() => StationRequested?.Invoke(args)).ConfigureAwait(false);
+        await UiMarshal.OnUiAsync(() => StationRequested?.Invoke(args)).ConfigureAwait(false);
     }
 
-    partial void OnSearchTextChanged(string value) => Ui(RefreshSearch);
+    partial void OnSearchTextChanged(string value) => UiMarshal.Ui(RefreshSearch);
 
-    partial void OnLoadProgressChanged(string value) => Ui(() => OnPropertyChanged(nameof(LoadProgressVisible)));
+    partial void OnLoadProgressChanged(string value) => UiMarshal.Ui(() => OnPropertyChanged(nameof(LoadProgressVisible)));
 
-    partial void OnActiveLetterChanged(string? value) => Ui(() => OnPropertyChanged(nameof(LetterActive)));
+    partial void OnActiveLetterChanged(string? value) => UiMarshal.Ui(() => OnPropertyChanged(nameof(LetterActive)));
 
     private void RefreshSearch()
     {
@@ -220,19 +138,10 @@ public partial class StationPickerVm : ObservableObject
             Heading = "Vyberte stanici";
             return;
         }
-        List<(string name, string bucket)> matches;
-        lock (_bucketsLock)
-            matches = _buckets
-                .Where(kv => kv.Key.Contains(q, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(kv => kv.Key, StringComparer.CurrentCulture)
-                .Take(200)
-                .Select(kv => (kv.Key, kv.Value))
-                .ToList();
+        var result = _service.Search(q);
         SearchResults.Clear();
-        foreach (var (name, bucket) in matches)
-            SearchResults.Add(new Station { Name = name, ClientId = "", Bucket = bucket });
-        int total;
-        lock (_bucketsLock) total = _buckets.Keys.Count(k => k.Contains(q, StringComparison.OrdinalIgnoreCase));
-        Heading = $"Výsledky pro „{q}“ (celkem {total})";
+        foreach (var s in result.Stations)
+            SearchResults.Add(s);
+        Heading = $"Výsledky pro „{q}“ (celkem {result.TotalCount})";
     }
 }

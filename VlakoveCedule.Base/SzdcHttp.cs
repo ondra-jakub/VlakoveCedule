@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace VlakoveCedule.Net;
+namespace VlakoveCedule.Base;
 
 /// <summary>
 /// HTTP vrstva pro Infotabuli. TLS tunel staví <see cref="BouncyTls"/> (server vyžaduje TLS 1.3),

@@ -1,23 +1,16 @@
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using VlakoveCedule.Models;
-using VlakoveCedule.Scraping;
+using VlakoveCedule.Base;
+using VlakoveCedule.Contracts;
+using VlakoveCedule.Core.Services;
 
 namespace VlakoveCedule.ViewModels;
 
 public partial class AppViewModel : ObservableObject
 {
-    public const string DefaultStation = "Praha hlavní nádraží";
-
-    private SzdcClient? _client;
+    private readonly InfotabuleService _service;
     private CancellationTokenSource? _lifeCts;
 
     [ObservableProperty]
@@ -35,21 +28,29 @@ public partial class AppViewModel : ObservableObject
     [ObservableProperty]
     private string _busyReason = "";
 
-    public BoardPageVm Board { get; private set; }
-    public StationPickerVm Picker { get; private set; }
+    public BoardPageVm Board { get; }
+    public StationPickerVm Picker { get; }
 
     public ObservableCollection<string> Tabs { get; } = ["Výběr stanic", "Odjezdy", "Příjezdy"];
 
     private readonly DispatcherTimer _clockTimer;
 
-    public AppViewModel()
+    public AppViewModel(InfotabuleService service)
     {
-        Board = new BoardPageVm(RefreshBoardAsync, EmitLog);
-        Picker = new StationPickerVm(
-            () => _client?.Letters.Select(l => new Models.LetterItem { ClientId = l.ClientId, Letter = l.Letter }).ToList() ?? [],
-            (letter, ct) => _client!.LoadLetterAsync(letter, ct),
-            _ => Task.CompletedTask);
+        _service = service;
+        Board = new BoardPageVm(service, EmitLog);
+        Picker = new StationPickerVm(service);
         Picker.StationRequested += OnStationRequested;
+
+        _service.Log += EmitLog;
+        _service.StatusChanged += s => UiMarshal.Ui(() => Status = s);
+        _service.BusyReasonChanged += s => UiMarshal.Ui(() => BusyReason = s);
+        _service.BoardUpdated += OnBoardUpdated;
+        _service.LettersChanged += letters => UiMarshal.Ui(() => Picker.SetLetterItems(letters));
+        _service.LetterListed += listing => UiMarshal.Ui(() => Picker.OnLetterListed(listing));
+        _service.PrefetchChanged += state => UiMarshal.Ui(() => Picker.ApplyPrefetchState(state));
+        _service.RefreshFailed += () => UiMarshal.Ui(Board.OnRefreshFailed);
+
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => ClockText = DateTime.Now.ToString("HH:mm");
         _clockTimer.Start();
@@ -140,18 +141,16 @@ public partial class AppViewModel : ObservableObject
         if (value == 0)
         {
             Board.Stop();
-            Picker.PrefetchPaused = false; // na Výběru stanic prefetch běží
+            _service.SetViewMode(ViewMode.Picker);
         }
         else
         {
-        Picker.PrefetchPaused = true;
-        Board.StartAutoRefresh();
-        // okamžitě obnovit jen když view na serveru není tabule (uživatel procházel stanice);
-        // 0×0 tabule je legálně prázdná (málo vlaků), NE zastaralá – nechceme kvůli ní spouštět obnovu
-        var stale = _client is null || !_client.IsViewBoard;
-        if (stale) _ = Board.RefreshNowCommand.ExecuteAsync(null);
+            _service.SetViewMode(ViewMode.Board);
+            Board.StartCountdown();
         }
     }
+
+    private void OnBoardUpdated(BoardSnapshot snapshot) => UiMarshal.Ui(() => Board.Load(snapshot));
 
     private async Task BootstrapAsync(CancellationToken ct)
     {
@@ -159,26 +158,7 @@ public partial class AppViewModel : ObservableObject
         BusyReason = "Připojuji se k Infotabuli…";
         try
         {
-            var state = LoadState();
-            _client = new SzdcClient();
-            _client.Log += s =>
-            {
-                if (s.StartsWith("Písmeno ", StringComparison.Ordinal)) return;
-                Status = s;
-            };
-            await _client.InitializeAsync(ct: ct).ConfigureAwait(true);
-            Picker.RefreshLetterItems();
-
-            var station = state?.Station is { Length: > 0 } st ? st : DefaultStation;
-            BusyReason = $"Otevírám tabuli stanice {station}…";
-            // POZOR – pořadí: nejdřív otevřít tabuli, poté spustit prefetch (jinak by kliky na písmena
-            // přepsaly serverové view a rozbily hned první obnovu tabule).
-            await SelectStationCoreAsync(station, bucket: null, clientId: null, ct).ConfigureAwait(true);
-            SaveState(new AppState { Station = station });
-            LastStationName = station;
-            Status = "Připojeno. Tabule se obnovuje každých " + BoardPageVm.RefreshPeriodSeconds + " s.";
-            Board.StartAutoRefresh();
-            Picker.StartPrefetch();
+            await _service.StartAsync(ct).ConfigureAwait(true);
             SelectedTab = 1;
         }
         catch (Exception ex)
@@ -203,16 +183,15 @@ public partial class AppViewModel : ObservableObject
             return;
         }
         EmitLog($"pick „{args.StationName}“ (bucket {args.Bucket}, clientId '{args.ClientId}')…");
-        Picker.PrefetchPaused = true;
         IsBusy = true;
         BusyReason = $"Otevírám tabuli stanice {args.StationName}…";
         try
         {
-            await SelectStationCoreAsync(args.StationName, args.Bucket, args.ClientId, CancellationToken.None).ConfigureAwait(true);
-            SaveState(new AppState { Station = args.StationName });
-            Board.StartAutoRefresh();
+            await _service
+                .SelectStationAsync(new StationRequest(args.StationName, args.Bucket, args.ClientId), CancellationToken.None)
+                .ConfigureAwait(true);
             SelectedTab = 1;
-            Status = $"Tabule stanice {args.StationName}. Obnova každých {BoardPageVm.RefreshPeriodSeconds} s.";
+            Status = $"Tabule stanice {args.StationName}. Obnova každých {InfotabuleService.RefreshPeriodSeconds} s.";
             EmitLog($"pick „{args.StationName}“ OK (tab 1, auto-refresh běží).");
         }
         catch (Exception ex)
@@ -224,104 +203,6 @@ public partial class AppViewModel : ObservableObject
         {
             IsBusy = false;
             BusyReason = "";
-            Picker.PrefetchPaused = SelectedTab != 0; // na Výběru stanic prefetch běží, na tabuli stojí
-        }
-    }
-
-    private async Task SelectStationCoreAsync(string name, string? bucket, string? clientId, CancellationToken ct)
-    {
-        var client = _client ?? throw new InvalidOperationException("Klient není připraven.");
-        SzdcParser.BoardInfo board;
-        if (!string.IsNullOrEmpty(clientId))
-        {
-            board = await client.SelectStationLinkAsync(clientId, name, ct).ConfigureAwait(true);
-        }
-        else
-        {
-            board = await client.SelectStationByNameAsync(name, bucket, ct).ConfigureAwait(true);
-        }
-
-        // Pojistka proti tichému „úspěchu“ špatné tabule: klik na staré/neexistující tlačítko stanice
-        // vyřídí server v aktuálním (jiném) view a re-render vrátí tabuli předchozí stanice.
-        if (board.StationName.Length > 0 && !SameStationName(board.StationName, name))
-        {
-            client.ResetView();         // klient nesmí dál vědět, že je otevřen špatná stanice
-            EmitLog($"Výběr stanice: server otevřel „{board.StationName}“ místo „{name}“.");
-            throw new SzdcParser.SzdcException(
-                $"Server otevřel tabuli „{board.StationName}“ místo „{name}“. Zopakujte, prosím, výběr stanice.");
-        }
-        Board.Load(board);
-        if (!string.IsNullOrEmpty(board.StationName))
-            LastStationName = board.StationName;
-    }
-
-    private static bool SameStationName(string a, string b) =>
-        string.Equals(
-            Regex.Replace(a.Trim(), @"\s+", " "),
-            Regex.Replace(b.Trim(), @"\s+", " "),
-            StringComparison.OrdinalIgnoreCase);
-
-    [ObservableProperty]
-    private string? _lastStationName;
-
-    internal static void EmitLog(string message)
-        => DiagLog.Append("flow.log", $"[VM] {message}");
-
-    private async Task<(IReadOnlyList<BoardRow> dep, IReadOnlyList<BoardRow> arr)> RefreshBoardAsync(CancellationToken ct)
-    {
-        var client = _client ?? throw new InvalidOperationException("Klient není připraven.");
-        try
-        {
-            EmitLog("refresh (poll)…");
-            var r = await client.RefreshAsync(ct).ConfigureAwait(true);
-            EmitLog($"refresh OK ({r.Departures.Count}/{r.Arrivals.Count}).");
-            return (r.Departures, r.Arrivals);
-        }
-        catch (SzdcParser.StaleViewException)
-        {
-            // Uživatel mezi tím procházel stanice (view přepsáno) – NENÍ to vypršení session,
-            // stačí tabuli poslední stanice znovu otevřít (bez reinicializace klienta).
-            EmitLog("refresh: view zastaralé → znovuotevřu poslední stanici.");
-            var name = LastStationName ?? client.CurrentStationName;
-            if (string.IsNullOrEmpty(name)) throw;
-            await SelectStationCoreAsync(name, Picker.BucketFor(name), null, ct).ConfigureAwait(true);
-            var board = client.CurrentBoard
-                ?? throw new InvalidOperationException("Tabule není otevřena.");
-            EmitLog($"reopen OK ({board.Departures.Count}/{board.Arrivals.Count}).");
-            return (board.Departures, board.Arrivals);
-        }
-        catch (Exception ex)
-        {
-            // session pravděpodobně vypršela → celá reinicializace + nový výběr poslední stanice
-            EmitLog("refresh selhal: " + ex.Message);
-            Status = "Session vypršela – znovu připojuji…";
-            await ReconnectAsync(ct).ConfigureAwait(true);
-            var board = client.CurrentBoard
-                ?? throw new InvalidOperationException("Tabule není otevřena.");
-            EmitLog("reconnect OK, tabule znovu otevřena.");
-            return (board.Departures, board.Arrivals);
-        }
-    }
-
-    private async Task ReconnectAsync(CancellationToken ct)
-    {
-        var client = _client ?? throw new InvalidOperationException("Klient není připraven.");
-        var resumePrefetch = !Picker.PrefetchPaused;
-        Picker.PrefetchPaused = true;
-        try
-        {
-            try { await client.InitializeAsync(ct: ct).ConfigureAwait(true); }
-            catch (Exception ex) { Status = "Chyba připojení: " + ex.Message; throw; }
-            Picker.RefreshLetterItems();
-            if (LastStationName != null)
-            {
-                var bucket = Picker.BucketFor(LastStationName);
-                await SelectStationCoreAsync(LastStationName, bucket, null, ct).ConfigureAwait(true);
-            }
-        }
-        finally
-        {
-            if (resumePrefetch) Picker.PrefetchPaused = false;
         }
     }
 
@@ -332,7 +213,7 @@ public partial class AppViewModel : ObservableObject
         BusyReason = "Obnovuji…";
         try
         {
-            await ReconnectAsync(CancellationToken.None).ConfigureAwait(true);
+            await _service.ReconnectAsync(CancellationToken.None).ConfigureAwait(true);
             Status = "Připojeno.";
         }
         catch (Exception ex)
@@ -346,39 +227,6 @@ public partial class AppViewModel : ObservableObject
         }
     }
 
-    // ---------- perzistence ----------
-    private sealed class AppState
-    {
-        public string? Station { get; set; }
-    }
-
-    private static string GetAppData()
-    {
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VlakoveCedule");
-        Directory.CreateDirectory(dir);
-        return dir;
-    }
-
-    private static AppState? LoadState()
-    {
-        try
-        {
-            var f = Path.Combine(GetAppData(), "state.json");
-            if (!File.Exists(f)) return null;
-            return JsonSerializer.Deserialize<AppState>(File.ReadAllText(f));
-        }
-        catch { return null; }
-    }
-
-    private static void SaveState(AppState state)
-    {
-        try
-        {
-            var f = Path.Combine(GetAppData(), "state.json");
-            File.WriteAllText(f, JsonSerializer.Serialize(state));
-        }
-        catch { }
-    }
+    internal static void EmitLog(string message)
+        => DiagLog.Append("flow.log", $"[VM] {message}");
 }

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>VlakoveCedule.Core</RootNamespace>
+        <AssemblyName>VlakoveCedule.Core</AssemblyName>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../VlakoveCedule.Base/VlakoveCedule.Base.csproj" />
+        <ProjectReference Include="../VlakoveCedule.Contracts/VlakoveCedule.Contracts.csproj" />
+    </ItemGroup>
+
+</Project>

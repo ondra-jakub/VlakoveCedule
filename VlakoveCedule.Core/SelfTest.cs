@@ -1,10 +1,10 @@
-using VlakoveCedule.Models;
-using VlakoveCedule.Scraping;
+using VlakoveCedule.Contracts;
+using VlakoveCedule.Core.Scraping;
 
-namespace VlakoveCedule;
+namespace VlakoveCedule.Core;
 
 /// <summary>Live ověření klienta z konzole: <c>dotnet run --project VlakoveCedule -- --probe</c></summary>
-internal static class SelfTest
+public static class SelfTest
 {
     public static async Task RunAsync(string[] args)
     {

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using VlakoveCedule.Core.Services;
 using VlakoveCedule.ViewModels;
 using VlakoveCedule.Views;
 
@@ -17,7 +18,8 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var vm = new AppViewModel();
+            var service = new InfotabuleService();
+            var vm = new AppViewModel(service);
             desktop.MainWindow = new MainWindow { DataContext = vm };
             vm.Start();
             if (Environment.GetCommandLineArgs().Contains("--autotest"))

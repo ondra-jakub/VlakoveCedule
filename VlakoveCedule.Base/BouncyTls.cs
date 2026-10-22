@@ -6,7 +6,7 @@ using System.Text;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
-namespace VlakoveCedule.Net;
+namespace VlakoveCedule.Base;
 
 /// <summary>
 /// TLS klient přes BouncyCastle. Server Infotabule vyžaduje TLS 1.3, který systémový

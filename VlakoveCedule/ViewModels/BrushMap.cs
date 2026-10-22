@@ -1,5 +1,5 @@
 using Avalonia.Media;
-using VlakoveCedule.Models;
+using VlakoveCedule.Contracts;
 
 namespace VlakoveCedule.ViewModels;
 

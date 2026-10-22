@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.RegularExpressions;
-using VlakoveCedule.Models;
+using VlakoveCedule.Contracts;
 
-namespace VlakoveCedule.Scraping;
+namespace VlakoveCedule.Core.Scraping;
 
 /// <summary>
 /// Parsování Liferay/JSF/PrimeFaces odpovědí tabule (www.spravazeleznic.cz/cestujici/infotabule).

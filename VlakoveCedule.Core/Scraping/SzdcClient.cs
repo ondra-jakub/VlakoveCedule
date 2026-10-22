@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text.RegularExpressions;
-using VlakoveCedule.Models;
-using VlakoveCedule.Net;
+using VlakoveCedule.Base;
+using VlakoveCedule.Contracts;
 
-namespace VlakoveCedule.Scraping;
+namespace VlakoveCedule.Core.Scraping;
 
 /// <summary>
 /// Klient Infotabule (www.spravazeleznic.cz). Replikuje JSF/PrimeFaces AJAX toky:
